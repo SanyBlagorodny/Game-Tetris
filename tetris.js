@@ -13,6 +13,21 @@ const COLORS = [
     '#f00000'  // Z
 ];
 
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function hexToRgb(hex) {
+    const h = hex.replace('#','');
+    const num = parseInt(h, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function lighten(hex, amt) {
+    const {r,g,b} = hexToRgb(hex);
+    return rgbToHex(clamp(r + amt, 0, 255), clamp(g + amt, 0, 255), clamp(b + amt, 0, 255));
+}
+function darken(hex, amt) { return lighten(hex, -amt); }
+
 // Формы тетромино
 const SHAPES = [
     null,
@@ -155,25 +170,26 @@ function drawPiece(p, isGhost = false) {
     p.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value) {
+                const base = COLORS[p.type];
+                const px = (p.position.x + x) * BLOCK_SIZE;
+                const py = (p.position.y + y) * BLOCK_SIZE;
                 if (isGhost) {
-                    ctx.fillStyle = COLORS[p.type] + '80';
+                    ctx.fillStyle = base + '80';
+                    ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
                 } else {
-                    ctx.fillStyle = COLORS[p.type];
-                }
-                
-                ctx.fillRect(
-                    (p.position.x + x) * BLOCK_SIZE,
-                    (p.position.y + y) * BLOCK_SIZE,
-                    BLOCK_SIZE, BLOCK_SIZE
-                );
-                
-                if (!isGhost) {
-                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-                    ctx.strokeRect(
-                        (p.position.x + x) * BLOCK_SIZE,
-                        (p.position.y + y) * BLOCK_SIZE,
-                        BLOCK_SIZE, BLOCK_SIZE
-                    );
+                    const grad = ctx.createLinearGradient(px, py, px, py + BLOCK_SIZE);
+                    grad.addColorStop(0, lighten(base, 35));
+                    grad.addColorStop(0.5, base);
+                    grad.addColorStop(1, darken(base, 35));
+                    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetY = 2;
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                    ctx.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
                 }
             }
         });
@@ -214,19 +230,17 @@ function drawNextPiece() {
         nextPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value) {
-                    nextCtx.fillStyle = COLORS[nextPiece.type];
-                    nextCtx.fillRect(
-                        offsetX + x * blockSize,
-                        offsetY + y * blockSize,
-                        blockSize, blockSize
-                    );
-                    
-                    nextCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-                    nextCtx.strokeRect(
-                        offsetX + x * blockSize,
-                        offsetY + y * blockSize,
-                        blockSize, blockSize
-                    );
+                    const base = COLORS[nextPiece.type];
+                    const bx = offsetX + x * blockSize;
+                    const by = offsetY + y * blockSize;
+                    const grad = nextCtx.createLinearGradient(bx, by, bx, by + blockSize);
+                    grad.addColorStop(0, lighten(base, 35));
+                    grad.addColorStop(0.5, base);
+                    grad.addColorStop(1, darken(base, 35));
+                    nextCtx.fillStyle = grad;
+                    nextCtx.fillRect(bx, by, blockSize, blockSize);
+                    nextCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                    nextCtx.strokeRect(bx, by, blockSize, blockSize);
                 }
             });
         });
