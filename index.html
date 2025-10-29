@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тетрис</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a202c;
+            color: white;
+            overflow: hidden;
+        }
+        
+        #game-board {
+            border: 2px solid #4a5568;
+            background-color: #2d3748;
+        }
+        
+        .block {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .block.I { background-color: #00f0f0; }
+        .block.J { background-color: #0000f0; }
+        .block.L { background-color: #e400f0; }
+        .block.O { background-color: #f0f000; }
+        .block.S { background-color: #00f000; }
+        .block.T { background-color: #a000f0; }
+        .block.Z { background-color: #f00000; }
+        
+        .ghost {
+            opacity: 0.3;
+        }
+        
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .flash-animation {
+            animation: flash 0.2s 3;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="text-center mb-6">
+        <h1 class="text-4xl font-bold text-indigo-400 mb-2">ТЕТРИС</h1>
+        <div class="flex justify-center space-x-8">
+            <div class="text-center">
+                <p class="text-gray-400">Очки</p>
+                <p id="score" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="text-center">
+                <p class="text-gray-400">Уровень</p>
+                <p id="level" class="text-2xl font-bold">1</p>
+            </div>
+            <div class="text-center">
+                <p class="text-gray-400">Линии</p>
+                <p id="lines" class="text-2xl font-bold">0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-6 w-full max-w-md md:hidden">
+        <div class="text-center text-gray-400 text-sm">Управление для сенсорных экранов</div>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+            <button id="left-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded">←</button>
+            <button id="rotate-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded">⟳</button>
+            <button id="right-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded">→</button>
+            <button id="soft-drop-btn" class="col-span-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded">↓</button>
+            <button id="hard-drop-btn" class="col-span-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded">Падение</button>
+        </div>
+    </div>
+    
+    <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+        <div class="relative">
+            <canvas id="game-board" width="300" height="600" class="shadow-lg"></canvas>
+            <div id="game-over" class="hidden absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
+                <h2 class="text-3xl font-bold text-red-500 mb-4">ИГРА ОКОНЧЕНА</h2>
+                <button id="restart-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded">
+                    Играть снова
+                </button>
+            </div>
+            <div id="pause-screen" class="hidden absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
+                <h2 class="text-3xl font-bold text-yellow-400">ПАУЗА</h2>
+            </div>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="text-xl font-bold mb-2 text-center">Следующая фигура</h3>
+                <canvas id="next-piece" width="120" height="120" class="mx-auto"></canvas>
+            </div>
+            
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="text-xl font-bold mb-2">Управление</h3>
+                <ul class="space-y-2 text-gray-300">
+                    <li class="flex items-center">
+                        <span class="bg-gray-700 px-2 py-1 rounded mr-2">← →</span>
+                        <span>Движение</span>
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-gray-700 px-2 py-1 rounded mr-2">↑</span>
+                        <span>Поворот</span>
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-gray-700 px-2 py-1 rounded mr-2">↓</span>
+                        <span>Быстрое падение</span>
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-gray-700 px-2 py-1 rounded mr-2">Пробел</span>
+                        <span>Мгновенное падение</span>
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-gray-700 px-2 py-1 rounded mr-2">P</span>
+                        <span>Пауза</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <button id="start-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded">
+                Начать игру
+            </button>
+            <button id="pause-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded hidden">
+                Пауза
+            </button>
+        </div>
+    </div>
+
+    <script src="tetris.js"></script>
+</body>
+</html>

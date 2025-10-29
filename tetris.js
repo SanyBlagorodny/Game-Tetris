@@ -80,11 +80,11 @@ function init() {
     startBtn.addEventListener('click', startGame);
     pauseBtn.addEventListener('click', togglePause);
     restartBtn.addEventListener('click', resetGame);
-    leftBtn.addEventListener('click', () => movePiece(-1));
-    rightBtn.addEventListener('click', () => movePiece(1));
-    rotateBtn.addEventListener('click', rotatePiece);
-    softDropBtn.addEventListener('click', () => movePiece(0, 1));
-    hardDropBtn.addEventListener('click', hardDrop);
+    if (leftBtn) leftBtn.addEventListener('click', () => movePiece(-1));
+    if (rightBtn) rightBtn.addEventListener('click', () => movePiece(1));
+    if (rotateBtn) rotateBtn.addEventListener('click', rotatePiece);
+    if (softDropBtn) softDropBtn.addEventListener('click', () => movePiece(0, 1));
+    if (hardDropBtn) hardDropBtn.addEventListener('click', hardDrop);
     
     // Отрисовка начального пустого поля
     drawBoard();
@@ -198,12 +198,18 @@ function calculateGhostPosition() {
 
 // Отрисовка следующей фигуры (превью)
 function drawNextPiece() {
-    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    const rect = nextCanvas.getBoundingClientRect();
+    const cw = rect.width;
+    const ch = rect.height;
+    // clear using CSS-pixel space (after ctx.scale)
+    nextCtx.clearRect(0, 0, cw, ch);
     
     if (nextPiece) {
         const blockSize = 25;
-        const offsetX = (nextCanvas.width / 4 - (nextPiece.shape[0].length * blockSize) / 2) / 4;
-        const offsetY = (nextCanvas.height / 4 - (nextPiece.shape.length * blockSize) / 2) / 4;
+        const shapeW = nextPiece.shape[0].length * blockSize;
+        const shapeH = nextPiece.shape.length * blockSize;
+        const offsetX = (cw - shapeW) / 2;
+        const offsetY = (ch - shapeH) / 2;
         
         nextPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
